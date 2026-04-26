@@ -1,11 +1,18 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, Package, ShoppingCart } from 'lucide-react'
+import { LayoutDashboard, Users, Package, ShoppingCart, Warehouse, Truck, FileText, Wallet, FolderKanban, BarChart3 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
   { to: '/customers', icon: Users, label: 'Clients' },
   { to: '/products', icon: Package, label: 'Produits' },
   { to: '/orders', icon: ShoppingCart, label: 'Commandes' },
+  { to: '/users', icon: Users, label: 'Utilisateurs' },
+  { to: '/inventory', icon: Warehouse, label: 'Inventaire' },
+  { to: '/suppliers', icon: Truck, label: 'Fournisseurs' },
+  { to: '/accounting', icon: Wallet, label: 'Comptabilité' },
+  { to: '/projects', icon: FolderKanban, label: 'Projets' },
+  { to: '/reports', icon: BarChart3, label: 'Rapports' },
+  { to: '/invoices', icon: FileText, label: 'Factures' },
 ]
 
 export default function Layout() {
