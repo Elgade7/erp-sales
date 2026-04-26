@@ -101,24 +101,6 @@ async function initDatabase() {
     }
   }
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sku TEXT UNIQUE,
-      name TEXT NOT NULL,
-      description TEXT,
-      category TEXT,
-      price REAL NOT NULL,
-      cost_price REAL DEFAULT 0,
-      stock INTEGER DEFAULT 0,
-      min_stock INTEGER DEFAULT 0,
-      unit TEXT DEFAULT 'piece',
-      image_url TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
   addColumnIfNotExists('products', 'sku', 'TEXT');
   addColumnIfNotExists('products', 'category', 'TEXT');
   addColumnIfNotExists('products', 'min_stock', 'INTEGER DEFAULT 0');
