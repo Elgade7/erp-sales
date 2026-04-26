@@ -105,10 +105,13 @@ async function initDatabase() {
       product_id INTEGER NOT NULL,
       warehouse_id INTEGER NOT NULL,
       quantity INTEGER DEFAULT 0,
+      min_stock INTEGER DEFAULT 0,
       FOREIGN KEY (product_id) REFERENCES products(id),
       FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
     )
   `);
+
+  try { db.run(`ALTER TABLE inventory ADD COLUMN min_stock INTEGER DEFAULT 0`); } catch (e) {}
 
   db.run(`
     CREATE TABLE IF NOT EXISTS stock_transfers (

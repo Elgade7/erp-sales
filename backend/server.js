@@ -292,6 +292,50 @@ app.get('/api/inventory', (req, res) => {
   res.json(inventory);
 });
 
+app.post('/api/inventory', (req, res) => {
+  const { product_id, warehouse_id, quantity, min_stock } = req.body;
+  try {
+    const existing = getOne('SELECT * FROM inventory WHERE product_id = ? AND warehouse_id = ?', [product_id, warehouse_id]);
+    if (existing) {
+      runQuery('UPDATE inventory SET quantity = ?, min_stock = ? WHERE id = ?', [quantity, min_stock || 0, existing.id]);
+      logActivity('update', 'inventory', `Updated inventory for product ${product_id}`);
+    } else {
+      const id = insertAndGetId('INSERT INTO inventory (product_id, warehouse_id, quantity, min_stock) VALUES (?, ?, ?, ?)', [product_id, warehouse_id, quantity, min_stock || 0]);
+      logActivity('create', 'inventory', `Created inventory for product ${product_id}`);
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.put('/api/inventory/:id', (req, res) => {
+  const { id } = req.params;
+  const { product_id, warehouse_id, quantity, min_stock } = req.body;
+  runQuery('UPDATE inventory SET product_id = ?, warehouse_id = ?, quantity = ?, min_stock = ? WHERE id = ?', [product_id, warehouse_id, quantity, min_stock || 0, id]);
+  logActivity('update', 'inventory', `Updated inventory ${id}`);
+  res.json({ success: true });
+});
+
+app.delete('/api/inventory/:id', (req, res) => {
+  const { id } = req.params;
+  runQuery('DELETE FROM inventory WHERE id = ?', [id]);
+  logActivity('delete', 'inventory', `Deleted inventory ${id}`);
+  res.json({ success: true });
+});
+
+app.get('/api/inventory/warehouse/:warehouseId', (req, res) => {
+  const { warehouseId } = req.params;
+  const inventory = getAll(`
+    SELECT i.*, p.name as product_name, p.sku, w.name as warehouse_name
+    FROM inventory i
+    JOIN products p ON i.product_id = p.id
+    JOIN warehouses w ON i.warehouse_id = w.id
+    WHERE i.warehouse_id = ?
+  `, [warehouseId]);
+  res.json(inventory);
+});
+
 app.post('/api/inventory/adjust', (req, res) => {
   const { product_id, warehouse_id, quantity, type, notes } = req.body;
   const inv = getOne('SELECT * FROM inventory WHERE product_id = ? AND warehouse_id = ?', [product_id, warehouse_id]);
@@ -303,6 +347,32 @@ app.post('/api/inventory/adjust', (req, res) => {
   }
   logActivity('adjust', 'inventory', `Adjusted inventory: ${type} ${quantity} units`);
   res.json({ success: true });
+});
+
+app.post('/api/inventory/transfer', (req, res) => {
+  const { from_warehouse_id, to_warehouse_id, product_id, quantity, notes } = req.body;
+  try {
+    const id = insertAndGetId(
+      'INSERT INTO stock_transfers (from_warehouse_id, to_warehouse_id, product_id, quantity, notes, created_by, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [from_warehouse_id, to_warehouse_id, product_id, quantity, notes, currentUser?.id, 'completed']
+    );
+    if (from_warehouse_id) {
+      const fromInv = getOne('SELECT * FROM inventory WHERE product_id = ? AND warehouse_id = ?', [product_id, from_warehouse_id]);
+      if (fromInv) {
+        runQuery('UPDATE inventory SET quantity = quantity - ? WHERE id = ?', [quantity, fromInv.id]);
+      }
+    }
+    const toInv = getOne('SELECT * FROM inventory WHERE product_id = ? AND warehouse_id = ?', [product_id, to_warehouse_id]);
+    if (toInv) {
+      runQuery('UPDATE inventory SET quantity = quantity + ? WHERE id = ?', [quantity, toInv.id]);
+    } else {
+      insertAndGetId('INSERT INTO inventory (product_id, warehouse_id, quantity) VALUES (?, ?, ?)', [product_id, to_warehouse_id, quantity]);
+    }
+    logActivity('transfer', 'inventory', `Stock transfer: ${quantity} units`);
+    res.json({ id, success: true });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 app.get('/api/stock-transfers', (req, res) => {
