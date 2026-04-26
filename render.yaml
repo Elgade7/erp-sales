@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: erp-sales
+    env: node
+    region: oregon
+    plan: free
+    startCommand: npm start
+    buildCommand: npm run build
+    healthCheckPath: /api/health
