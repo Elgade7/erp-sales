@@ -89,9 +89,17 @@ async function initDatabase() {
     )
   `);
 
-  db.run(`ALTER TABLE products ADD COLUMN sku TEXT`);
-  db.run(`ALTER TABLE products ADD COLUMN category TEXT`);
-  db.run(`ALTER TABLE products ADD COLUMN min_stock INTEGER DEFAULT 0`);
+  function addColumnIfNotExists(table, column, type) {
+    const result = db.exec(`PRAGMA table_info(${table})`);
+    const exists = result.length > 0 && result[0].values.some(row => row[1] === column);
+    if (!exists) {
+      db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+    }
+  }
+  addColumnIfNotExists('products', 'sku', 'TEXT');
+  addColumnIfNotExists('products', 'category', 'TEXT');
+  addColumnIfNotExists('products', 'min_stock', 'INTEGER DEFAULT 0');
+  addColumnIfNotExists('inventory', 'min_stock', 'INTEGER DEFAULT 0');
 
   db.run(`
     CREATE TABLE IF NOT EXISTS warehouses (
