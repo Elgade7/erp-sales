@@ -89,6 +89,10 @@ async function initDatabase() {
     )
   `);
 
+  db.run(`ALTER TABLE products ADD COLUMN sku TEXT`);
+  db.run(`ALTER TABLE products ADD COLUMN category TEXT`);
+  db.run(`ALTER TABLE products ADD COLUMN min_stock INTEGER DEFAULT 0`);
+
   db.run(`
     CREATE TABLE IF NOT EXISTS warehouses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
