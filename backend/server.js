@@ -352,15 +352,18 @@ app.post('/api/inventory/adjust', (req, res) => {
 app.post('/api/inventory/transfer', (req, res) => {
   const { from_warehouse_id, to_warehouse_id, product_id, quantity, notes } = req.body;
   try {
-    const id = insertAndGetId(
-      'INSERT INTO stock_transfers (from_warehouse_id, to_warehouse_id, product_id, quantity, notes, created_by, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [from_warehouse_id, to_warehouse_id, product_id, quantity, notes, currentUser?.id, 'completed']
-    );
+    if (!product_id || !quantity || quantity <= 0) {
+      return res.status(400).json({ error: 'Invalid transfer data' });
+    }
     if (from_warehouse_id) {
       const fromInv = getOne('SELECT * FROM inventory WHERE product_id = ? AND warehouse_id = ?', [product_id, from_warehouse_id]);
-      if (fromInv) {
-        runQuery('UPDATE inventory SET quantity = quantity - ? WHERE id = ?', [quantity, fromInv.id]);
+      if (!fromInv) {
+        return res.status(400).json({ error: 'Source inventory not found' });
       }
+      if (fromInv.quantity < quantity) {
+        return res.status(400).json({ error: `Insufficient stock. Available: ${fromInv.quantity}` });
+      }
+      runQuery('UPDATE inventory SET quantity = quantity - ? WHERE id = ?', [quantity, fromInv.id]);
     }
     const toInv = getOne('SELECT * FROM inventory WHERE product_id = ? AND warehouse_id = ?', [product_id, to_warehouse_id]);
     if (toInv) {
@@ -368,6 +371,10 @@ app.post('/api/inventory/transfer', (req, res) => {
     } else {
       insertAndGetId('INSERT INTO inventory (product_id, warehouse_id, quantity) VALUES (?, ?, ?)', [product_id, to_warehouse_id, quantity]);
     }
+    const id = insertAndGetId(
+      'INSERT INTO stock_transfers (from_warehouse_id, to_warehouse_id, product_id, quantity, notes, created_by, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [from_warehouse_id, to_warehouse_id, product_id, quantity, notes, currentUser?.id, 'completed']
+    );
     logActivity('transfer', 'inventory', `Stock transfer: ${quantity} units`);
     res.json({ id, success: true });
   } catch (error) {

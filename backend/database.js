@@ -111,8 +111,6 @@ async function initDatabase() {
     )
   `);
 
-  try { db.run(`ALTER TABLE inventory ADD COLUMN min_stock INTEGER DEFAULT 0`); } catch (e) {}
-
   db.run(`
     CREATE TABLE IF NOT EXISTS stock_transfers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

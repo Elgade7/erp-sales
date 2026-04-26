@@ -8,7 +8,7 @@ export default function Products() {
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', stock: '' })
+  const [formData, setFormData] = useState({ sku: '', name: '', description: '', category: '', price: '', stock: '', min_stock: '' })
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -30,14 +30,17 @@ export default function Products() {
     if (product) {
       setEditingProduct(product)
       setFormData({
+        sku: product.sku || '',
         name: product.name,
         description: product.description || '',
+        category: product.category || '',
         price: product.price.toString(),
-        stock: product.stock.toString()
+        stock: product.stock.toString(),
+        min_stock: product.min_stock?.toString() || '0'
       })
     } else {
       setEditingProduct(null)
-      setFormData({ name: '', description: '', price: '', stock: '' })
+      setFormData({ sku: '', name: '', description: '', category: '', price: '', stock: '', min_stock: '0' })
     }
     setError('')
     setShowModal(true)
@@ -62,10 +65,13 @@ export default function Products() {
     }
     try {
       const data = {
+        sku: formData.sku,
         name: formData.name,
         description: formData.description,
+        category: formData.category,
         price: parseFloat(formData.price),
-        stock: parseInt(formData.stock) || 0
+        stock: parseInt(formData.stock) || 0,
+        min_stock: parseInt(formData.min_stock) || 0
       }
       if (editingProduct) {
         await api.products.update(editingProduct.id, data)
@@ -130,29 +136,33 @@ export default function Products() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-gray-600">SKU</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-gray-600">Nom</th>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-gray-600">Description</th>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-gray-600">Catégorie</th>
                 <th className="text-right px-6 py-3 text-sm font-semibold text-gray-600">Prix</th>
                 <th className="text-right px-6 py-3 text-sm font-semibold text-gray-600">Stock</th>
+                <th className="text-right px-6 py-3 text-sm font-semibold text-gray-600">Min</th>
                 <th className="text-right px-6 py-3 text-sm font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">Aucun produit trouvé</td>
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">Aucun produit trouvé</td>
                 </tr>
               ) : (
                 filteredProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-gray-600">{product.sku || '-'}</td>
                     <td className="px-6 py-4 font-medium text-gray-800">{product.name}</td>
-                    <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{product.description || '-'}</td>
+                    <td className="px-6 py-4 text-gray-600">{product.category || '-'}</td>
                     <td className="px-6 py-4 text-gray-800 text-right font-medium">{product.price.toLocaleString('fr-FR')} €</td>
                     <td className="px-6 py-4 text-right">
                       <span className={`px-2 py-1 rounded-full text-sm ${product.stock > 10 ? 'bg-green-100 text-green-800' : product.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                         {product.stock}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-right text-gray-600">{product.min_stock || 0}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
@@ -192,6 +202,28 @@ export default function Products() {
               {error && (
                 <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm">{error}</div>
               )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                  <input
+                    type="text"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="SKU-001"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                  <input
+                    type="text"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="Électronique"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
                 <input
@@ -212,7 +244,7 @@ export default function Products() {
                   placeholder="Description du produit..."
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Prix (€) *</label>
                   <input
@@ -232,6 +264,17 @@ export default function Products() {
                     min="0"
                     value={formData.stock}
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock Min</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.min_stock}
+                    onChange={(e) => setFormData({ ...formData, min_stock: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="0"
                   />

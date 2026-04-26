@@ -85,6 +85,17 @@ export default function Inventory() {
     }
   }
 
+  async function handleDelete(id) {
+    if (confirm('Supprimer cet élément d\'inventaire ?')) {
+      try {
+        await api.inventory.delete(id)
+        loadData()
+      } catch (error) {
+        alert(error.message)
+      }
+    }
+  }
+
   const filteredInventory = inventory.filter(item =>
     (item.product_name && item.product_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (item.warehouse_name && item.warehouse_name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -168,6 +179,12 @@ export default function Inventory() {
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                           <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
