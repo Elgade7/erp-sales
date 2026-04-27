@@ -1,0 +1,5 @@
+v: 0
+app: erp-sales
+icon: ./frontend/public/icon.png
+runtime: nodejs20.x
+main: detaspace.js
